@@ -28,6 +28,11 @@
     "lint-staged": "^15.2.2",
     "bun-types": "^1.1.2"
   },
+  "engine-strict": true,
+  "engines": {
+    "node": ">=18 <22",
+    "pnpm": ">=7"
+  },
   "module": "src/index.js",
   "commitlint": {
     "extends": [
