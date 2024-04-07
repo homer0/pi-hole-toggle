@@ -1,11 +1,13 @@
 import { Elysia } from 'elysia';
 import { html } from '@elysiajs/html';
+import { staticPlugin } from '@elysiajs/static';
 import { CONFIG } from './config';
 import { getPiHoleStatus, enablePiHole, disablePiHole } from './client';
 import { renderDocument, renderApp } from './ui';
 
 const app = new Elysia()
   .use(html())
+  .use(staticPlugin())
   .get('/api/status', async () => {
     const enabled = await getPiHoleStatus();
     return renderApp({ enabled });

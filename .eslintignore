@@ -4,3 +4,4 @@ documentation/*
 node_modules/*
 docs/*
 types/*
+public/vendor/*
