@@ -7,7 +7,7 @@
   "license": "MIT",
   "scripts": {
     "test": "echo \"lol\"",
-    "dev": "bun run --watch src/index.ts",
+    "dev": "bun run --watch src/index.tsx",
     "lint": "lint-staged",
     "lint:all": "eslint ./ --ext .js --ext .jsx --ext .ts --ext .tsx",
     "types:check": "tsc --noEmit",
