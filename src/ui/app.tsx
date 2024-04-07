@@ -12,7 +12,14 @@ export const renderApp = ({ enabled }: RenderAppProps): JSX.Element => {
       <div id="switch">
         <div class="vc-toggle-container">
           <label class="vc-switch">
-            <input type="checkbox" class="vc-switch-input" checked={enabled} />
+            <input
+              type="checkbox"
+              class="vc-switch-input"
+              checked={enabled}
+              hx-post={enabled ? '/api/disable' : '/api/enable'}
+              hx-swap="outerHTML"
+              hx-target="#app"
+            />
             <span class="vc-switch-label" data-on="On" data-off="Off"></span>
             <span class="vc-handle"></span>
           </label>
