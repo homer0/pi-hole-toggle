@@ -30,7 +30,10 @@ export const renderDocument = async ({
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </head>
       <body>
-        <main id="root">{children}</main>
+        <main id="root" hx-get="/api/status" hx-trigger="every 5s">
+          {children}
+        </main>
+        <script src="/public/vendor/htmx.js" />
       </body>
     </html>
   );
