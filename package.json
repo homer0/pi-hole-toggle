@@ -36,7 +36,7 @@
   },
   "lint-staged": {
     "*.{ts,tsx,js,json,css,scss,md}": [
-      "prettier --write"
+      "./utils/lint-staged-prettier.sh"
     ],
     "*.{ts,tsx,js}": [
       "eslint"
