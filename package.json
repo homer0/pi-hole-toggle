@@ -12,7 +12,8 @@
     "lint": "lint-staged",
     "lint:all": "eslint ./ --ext .js --ext .jsx --ext .ts --ext .tsx",
     "types:check": "tsc --noEmit",
-    "prepare": "husky || true"
+    "prepare": "husky || true",
+    "docker:build": "docker build --platform=linux/amd64 -t pi-hole-toggle ."
   },
   "dependencies": {
     "@elysiajs/html": "^1.0.2",
