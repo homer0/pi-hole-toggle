@@ -14,7 +14,10 @@ if (!apiUrl) {
 }
 
 export const CONFIG = {
+  title: 'Pi-hole Toggle',
   port: Number(process.env.PORT) || DEFAULT_PORT,
   apiToken,
   apiUrl,
+  stylesheet: './style.css',
+  compressCSS: process.env.COMPRESS_CSS !== 'false',
 } as const;
