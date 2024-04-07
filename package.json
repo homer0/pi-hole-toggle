@@ -12,7 +12,7 @@
     "lint": "lint-staged",
     "lint:all": "eslint ./ --ext .js --ext .jsx --ext .ts --ext .tsx",
     "types:check": "tsc --noEmit",
-    "prepare": "[ \"$NODE_ENV\" != \"production\" ] && (is-ci || husky install)"
+    "prepare": "husky || true"
   },
   "dependencies": {
     "@elysiajs/html": "^1.0.2",
@@ -26,7 +26,6 @@
     "@homer0/prettier-config": "^1.1.3",
     "eslint": "^8.57.0",
     "husky": "^9.0.11",
-    "is-ci": "^3.0.1",
     "lint-staged": "^15.2.2",
     "bun-types": "^1.1.2"
   },
