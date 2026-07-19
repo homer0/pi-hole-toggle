@@ -1,4 +1,5 @@
-import { ENABLED_ICON, DISABLED_ICON } from './icons';
+import { Html } from '@elysiajs/html';
+import { ENABLED_ICON, DISABLED_ICON } from './icons.js';
 
 export type RenderAppProps = {
   enabled: boolean;

@@ -1,9 +1,9 @@
 import { Elysia } from 'elysia';
 import { html } from '@elysiajs/html';
 import { staticPlugin } from '@elysiajs/static';
-import { CONFIG } from './config';
-import { getPiHoleStatus, enablePiHole, disablePiHole } from './client';
-import { renderDocument, renderApp } from './ui';
+import { CONFIG } from './config.js';
+import { getPiHoleStatus, enablePiHole, disablePiHole } from './client.js';
+import { renderDocument, renderApp } from './ui/index.js';
 
 const app = new Elysia()
   .use(html())

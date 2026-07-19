@@ -1,5 +1,6 @@
 import * as path from 'path';
-import { CONFIG } from '../config';
+import { Html } from '@elysiajs/html';
+import { CONFIG } from '../config.js';
 
 export type RenderDocumentProps = {
   children: JSX.Element;
