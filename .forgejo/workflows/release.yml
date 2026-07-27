@@ -99,7 +99,8 @@ jobs:
           set -e
           portainer_url="${PORTAINER_URL%/}"
           containers="$(
-            curl --fail --silent --show-error \
+            # Portainer uses a local custom TLS certificate not trusted by this job image.
+            curl --fail --insecure --silent --show-error \
               --header "X-API-Key: $PORTAINER_API_TOKEN" \
               "$portainer_url/api/endpoints/$PORTAINER_ENDPOINT_ID/docker/containers/json?all=true"
           )"
@@ -118,7 +119,7 @@ jobs:
               });
             '
           )"
-          curl --fail --silent --show-error --request POST \
+          curl --fail --insecure --silent --show-error --request POST \
             --header "X-API-Key: $PORTAINER_API_TOKEN" \
             --header 'Content-Type: application/json' \
             --data '{"PullImage":true}' \
