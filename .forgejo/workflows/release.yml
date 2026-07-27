@@ -140,7 +140,7 @@ jobs:
               --header "X-API-Key: $PORTAINER_API_TOKEN" \
               --header 'Content-Type: application/json' \
               --data '{"PullImage":true}' \
-              "$portainer_url/api/endpoints/$PORTAINER_ENDPOINT_ID/docker/containers/$container_id/recreate"
+              "$portainer_url/api/docker/$PORTAINER_ENDPOINT_ID/containers/$container_id/recreate"
           )"
           if [ "$recreate_status" -lt 200 ] || [ "$recreate_status" -ge 300 ]; then
             echo "Portainer container recreate failed with HTTP $recreate_status" >&2
