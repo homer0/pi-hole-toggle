@@ -88,3 +88,38 @@ jobs:
           docker push "$image"
           # Keep DIND storage bounded after a successful publication.
           docker image rm "$image" "$previous_image"
+
+      # Recreate only this container; its stack and other containers are untouched.
+      - name: Redeploy Pi-hole Toggle
+        env:
+          PORTAINER_URL: ${{ secrets.PORTAINER_URL }}
+          PORTAINER_API_TOKEN: ${{ secrets.PORTAINER_API_TOKEN }}
+          PORTAINER_ENDPOINT_ID: ${{ secrets.PORTAINER_ENDPOINT_ID }}
+        run: |
+          set -e
+          portainer_url="${PORTAINER_URL%/}"
+          containers="$(
+            curl --fail --silent --show-error \
+              --header "X-API-Key: $PORTAINER_API_TOKEN" \
+              "$portainer_url/api/endpoints/$PORTAINER_ENDPOINT_ID/docker/containers/json?all=true"
+          )"
+          container_id="$(
+            printf '%s' "$containers" | node -e '
+              let payload = "";
+              process.stdin.on("data", (chunk) => { payload += chunk; });
+              process.stdin.on("end", () => {
+                const container = JSON.parse(payload).find(({ Names = [] }) =>
+                  Names.includes("/pihole-toggle"),
+                );
+                if (!container) {
+                  throw new Error("Portainer container pihole-toggle was not found");
+                }
+                console.log(container.Id);
+              });
+            '
+          )"
+          curl --fail --silent --show-error --request POST \
+            --header "X-API-Key: $PORTAINER_API_TOKEN" \
+            --header 'Content-Type: application/json' \
+            --data '{"PullImage":true}' \
+            "$portainer_url/api/endpoints/$PORTAINER_ENDPOINT_ID/docker/containers/$container_id/recreate"
