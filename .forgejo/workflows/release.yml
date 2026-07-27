@@ -75,7 +75,8 @@ jobs:
       # DOCKER_HOST is injected by the runner and targets its isolated DIND daemon.
       - name: Build, publish, and remove image
         run: |
-          image='192.168.12.23:32768/homer0/pi-hole-toggle:latest'
+          # The DIND daemon reaches the NAS-published registry through its host gateway.
+          image='host.docker.internal:32768/homer0/pi-hole-toggle:latest'
           docker build --tag "$image" .
           docker push "$image"
           # Keep DIND storage bounded after a successful publication.
