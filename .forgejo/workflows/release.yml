@@ -16,7 +16,10 @@ jobs:
     # The runner's docker label provides Node and an isolated DIND daemon.
     runs-on: docker
     steps:
+      # Full history lets Git verify that the GitHub update is a fast-forward.
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - name: Install Bun and Docker CLI
         run: |
