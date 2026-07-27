@@ -98,12 +98,23 @@ jobs:
         run: |
           set -e
           portainer_url="${PORTAINER_URL%/}"
-          containers="$(
+          echo "Looking up pihole-toggle in Portainer endpoint $PORTAINER_ENDPOINT_ID"
+          lookup_response="$(mktemp)"
+          lookup_status="$(
             # Portainer uses a local custom TLS certificate not trusted by this job image.
-            curl --fail --insecure --silent --show-error \
+            curl --insecure --silent --show-error \
+              --output "$lookup_response" \
+              --write-out '%{http_code}' \
               --header "X-API-Key: $PORTAINER_API_TOKEN" \
               "$portainer_url/api/endpoints/$PORTAINER_ENDPOINT_ID/docker/containers/json?all=true"
           )"
+          if [ "$lookup_status" -lt 200 ] || [ "$lookup_status" -ge 300 ]; then
+            echo "Portainer container lookup failed with HTTP $lookup_status" >&2
+            cat "$lookup_response" >&2
+            exit 1
+          fi
+          containers="$(cat "$lookup_response")"
+          rm -f "$lookup_response"
           container_id="$(
             printf '%s' "$containers" | node -e '
               let payload = "";
@@ -119,8 +130,21 @@ jobs:
               });
             '
           )"
-          curl --fail --insecure --silent --show-error --request POST \
-            --header "X-API-Key: $PORTAINER_API_TOKEN" \
-            --header 'Content-Type: application/json' \
-            --data '{"PullImage":true}' \
-            "$portainer_url/api/endpoints/$PORTAINER_ENDPOINT_ID/docker/containers/$container_id/recreate"
+
+          echo "Recreating pihole-toggle container ${container_id:0:12}"
+          recreate_response="$(mktemp)"
+          recreate_status="$(
+            curl --insecure --silent --show-error --request POST \
+              --output "$recreate_response" \
+              --write-out '%{http_code}' \
+              --header "X-API-Key: $PORTAINER_API_TOKEN" \
+              --header 'Content-Type: application/json' \
+              --data '{"PullImage":true}' \
+              "$portainer_url/api/endpoints/$PORTAINER_ENDPOINT_ID/docker/containers/$container_id/recreate"
+          )"
+          if [ "$recreate_status" -lt 200 ] || [ "$recreate_status" -ge 300 ]; then
+            echo "Portainer container recreate failed with HTTP $recreate_status" >&2
+            cat "$recreate_response" >&2
+            exit 1
+          fi
+          rm -f "$recreate_response"
