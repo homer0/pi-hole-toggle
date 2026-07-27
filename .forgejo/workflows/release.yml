@@ -73,11 +73,18 @@ jobs:
           rmdir "$HOME/.ssh" 2>/dev/null || true
 
       # DOCKER_HOST is injected by the runner and targets its isolated DIND daemon.
-      - name: Build, publish, and remove image
+      - name: Preserve, build, publish, and remove images
         run: |
           # DIND reaches the registry over the shared user-defined bridge network.
           image='grid-registry:5000/homer0/pi-hole-toggle:latest'
+          previous_image='grid-registry:5000/homer0/pi-hole-toggle:prev'
+
+          # A push to prev replaces its existing registry tag.
+          docker pull "$image"
+          docker tag "$image" "$previous_image"
+          docker push "$previous_image"
+
           docker build --tag "$image" .
           docker push "$image"
           # Keep DIND storage bounded after a successful publication.
-          docker image rm "$image"
+          docker image rm "$image" "$previous_image"
