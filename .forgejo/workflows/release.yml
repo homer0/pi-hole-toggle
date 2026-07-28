@@ -108,6 +108,11 @@ jobs:
           # The x86 runner needs emulation to build the Raspberry Pi variant.
           docker run --privileged --rm tonistiigi/binfmt --install arm64
           # BuildKit v0.22.0 embeds runc v1.2.6, which supports the NAS's Linux 5.10 kernel.
+          # DIND persists its containers, so replace a previous builder before applying this pin.
+          builder_container='buildx_buildkit_pi-hole-toggle0'
+          if docker container inspect "$builder_container" > /dev/null 2>&1; then
+            docker container rm --force "$builder_container"
+          fi
           docker buildx create \
             --name pi-hole-toggle \
             --driver docker-container \
@@ -115,6 +120,7 @@ jobs:
             --buildkitd-config "$buildkit_config" \
             --use \
             --bootstrap
+          docker container inspect --format 'BuildKit image: {{.Config.Image}}' "$builder_container"
 
           # Copy the complete existing manifest through the HTTP-only registry.
           curl --fail --location --silent --show-error \
