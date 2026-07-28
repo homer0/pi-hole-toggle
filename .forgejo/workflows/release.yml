@@ -90,15 +90,46 @@ jobs:
       - name: Preserve, build, publish, and remove images
         run: |
           # DIND reaches the registry over the shared user-defined bridge network.
-          image='grid-registry:5000/homer0/pi-hole-toggle:latest'
-          previous_image='grid-registry:5000/homer0/pi-hole-toggle:prev'
+          registry='grid-registry:5000'
+          repository='homer0/pi-hole-toggle'
+          image="${registry}/${repository}:latest"
+          previous_image="${registry}/${repository}:prev"
+          manifest="$(mktemp)"
+          headers="$(mktemp)"
+          buildkit_config="$(mktemp)"
+          trap 'rm -f "$manifest" "$headers" "$buildkit_config"' EXIT
+
+          # BuildKit needs explicit plain-HTTP registry support.
+          cat > "$buildkit_config" <<EOF
+          [registry."${registry}"]
+            http = true
+          EOF
 
           # The x86 runner needs emulation to build the Raspberry Pi variant.
           docker run --privileged --rm tonistiigi/binfmt --install arm64
-          docker buildx create --name pi-hole-toggle --driver docker-container --use --bootstrap
+          docker buildx create \
+            --name pi-hole-toggle \
+            --driver docker-container \
+            --buildkitd-config "$buildkit_config" \
+            --use \
+            --bootstrap
 
-          # Preserve every platform in the current image under the prev tag.
-          docker buildx imagetools create --tag "$previous_image" "$image"
+          # Copy the complete existing manifest through the HTTP-only registry.
+          curl --fail --location --silent --show-error \
+            --header 'Accept: application/vnd.oci.image.index.v1+json, application/vnd.docker.distribution.manifest.list.v2+json, application/vnd.oci.image.manifest.v1+json, application/vnd.docker.distribution.manifest.v2+json' \
+            --dump-header "$headers" \
+            --output "$manifest" \
+            "http://${registry}/v2/${repository}/manifests/latest"
+          manifest_type="$(awk 'tolower($1) == "content-type:" { sub(/\r$/, "", $2); print $2; exit }' "$headers")"
+          if [ -z "$manifest_type" ]; then
+            echo 'Registry response did not include a manifest content type.' >&2
+            exit 1
+          fi
+          curl --fail --location --silent --show-error \
+            --request PUT \
+            --header "Content-Type: $manifest_type" \
+            --data-binary "@$manifest" \
+            "http://${registry}/v2/${repository}/manifests/prev"
 
           # Publish one manifest with native images for the NAS and Raspberry Pi.
           docker buildx build \
