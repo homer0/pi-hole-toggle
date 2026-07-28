@@ -46,31 +46,12 @@ jobs:
           bun run types:check
           bun run test
 
-      # Secrets are written only to this ephemeral job container.
-      - name: Configure GitHub SSH access
-        env:
-          GH_DEPLOY_KEY: ${{ secrets.GH_DEPLOY_KEY }}
-          GH_KNOWN_HOSTS: ${{ secrets.GH_KNOWN_HOSTS }}
-        run: |
-          install --directory --mode=700 "$HOME/.ssh"
-          printf '%s\n' "$GH_DEPLOY_KEY" > "$HOME/.ssh/github-deploy-key"
-          printf '%s\n' "$GH_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
-          chmod 600 "$HOME/.ssh/github-deploy-key" "$HOME/.ssh/known_hosts"
-
-      # This intentionally permits fast-forward updates only; it never uses --force.
       - name: Mirror main to GitHub
-        env:
-          GIT_SSH_COMMAND: >-
-            ssh -i $HOME/.ssh/github-deploy-key -o IdentitiesOnly=yes
-            -o StrictHostKeyChecking=yes -o UserKnownHostsFile=$HOME/.ssh/known_hosts
-        run: git push git@github.com:homer0/pi-hole-toggle.git HEAD:main
-
-      # Docker publication does not need the deploy key, so remove it immediately.
-      - name: Remove GitHub SSH access
-        if: ${{ always() }}
-        run: |
-          rm -f "$HOME/.ssh/github-deploy-key" "$HOME/.ssh/known_hosts"
-          rmdir "$HOME/.ssh" 2>/dev/null || true
+        uses: https://forgejo.home.homer0.dev/homer0/forgejo-actions/actions/github-push@main
+        with:
+          repository: homer0/pi-hole-toggle
+          branch: main
+          deploy-key: ${{ secrets.GH_DEPLOY_KEY }}
 
       # DOCKER_HOST is injected by the runner and targets its isolated DIND daemon.
       - name: Preserve, build, publish, and remove images
