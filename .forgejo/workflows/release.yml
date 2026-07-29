@@ -67,70 +67,10 @@ jobs:
           branch: main
           deploy-key: ${{ secrets.GH_DEPLOY_KEY }}
 
-      # DOCKER_HOST is injected by the runner and targets its isolated DIND daemon.
-      - name: Preserve, build, publish, and remove images
-        run: |
-          # DIND reaches the registry over the shared user-defined bridge network.
-          registry='grid-registry:5000'
-          repository='homer0/pi-hole-toggle'
-          image="${registry}/${repository}:latest"
-          previous_image="${registry}/${repository}:prev"
-          manifest="$(mktemp)"
-          headers="$(mktemp)"
-          buildkit_config="$(mktemp)"
-          trap 'rm -f "$manifest" "$headers" "$buildkit_config"' EXIT
-
-          # BuildKit needs explicit plain-HTTP registry support.
-          cat > "$buildkit_config" <<EOF
-          [registry."${registry}"]
-            http = true
-          EOF
-
-          # The x86 runner needs emulation to build the Raspberry Pi variant.
-          docker run --privileged --rm tonistiigi/binfmt --install arm64
-          # BuildKit v0.22.0 embeds runc v1.2.6, which supports the NAS's Linux 5.10 kernel.
-          # The builder uses DIND's network namespace to resolve the internal registry.
-          builder_container='buildx_buildkit_pi-hole-toggle0'
-          builder_image='moby/buildkit:v0.22.0@sha256:832fa7aa1eb3deb56fa62ae933bfa42dad9a83ff4824dbbaf173b49c722b59d0'
-          if docker container inspect "$builder_container" > /dev/null 2>&1; then
-            builder_settings="$(docker container inspect --format '{{.Config.Image}} {{.HostConfig.NetworkMode}}' "$builder_container")"
-            if [ "$builder_settings" != "$builder_image host" ]; then
-              docker container rm --force "$builder_container"
-            fi
-          fi
-          docker buildx create \
-            --name pi-hole-toggle \
-            --driver docker-container \
-            --driver-opt "image=$builder_image" \
-            --driver-opt network=host \
-            --buildkitd-config "$buildkit_config" \
-            --use \
-            --bootstrap
-          docker container inspect --format 'BuildKit image: {{.Config.Image}}, network: {{.HostConfig.NetworkMode}}' "$builder_container"
-
-          # Copy the complete existing manifest through the HTTP-only registry.
-          curl --fail --location --silent --show-error \
-            --header 'Accept: application/vnd.oci.image.index.v1+json, application/vnd.docker.distribution.manifest.list.v2+json, application/vnd.oci.image.manifest.v1+json, application/vnd.docker.distribution.manifest.v2+json' \
-            --dump-header "$headers" \
-            --output "$manifest" \
-            "http://${registry}/v2/${repository}/manifests/latest"
-          manifest_type="$(awk 'tolower($1) == "content-type:" { sub(/\r$/, "", $2); print $2; exit }' "$headers")"
-          if [ -z "$manifest_type" ]; then
-            echo 'Registry response did not include a manifest content type.' >&2
-            exit 1
-          fi
-          curl --fail --location --silent --show-error \
-            --request PUT \
-            --header "Content-Type: $manifest_type" \
-            --data-binary "@$manifest" \
-            "http://${registry}/v2/${repository}/manifests/prev"
-
-          # Publish one manifest with native images for the NAS and Raspberry Pi.
-          docker buildx build \
-            --platform linux/amd64,linux/arm64 \
-            --tag "$image" \
-            --push \
-            .
+      - name: Preserve and publish images
+        uses: https://forgejo.home.homer0.dev/homer0/forgejo-actions/actions/docker-publish@main
+        with:
+          image-path: homer0/pi-hole-toggle
 
       # Recreate only this container; its stack and other containers are untouched.
       - name: Redeploy Pi-hole Toggle
