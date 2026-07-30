@@ -1,7 +1,7 @@
 import { CONFIG } from './config.js';
 
 export type PiHoleBlockingResponse = {
-  blocking: boolean;
+  blocking: 'enabled' | 'disabled' | 'failed' | 'unknown';
 };
 
 type PiHoleAuthResponse = {
@@ -88,7 +88,7 @@ const sendRequest = async (
 export const getPiHoleStatus = async (): Promise<boolean> => {
   const response = await sendRequest('/dns/blocking');
   const data = await getResponseJson<PiHoleBlockingResponse>(response);
-  return data.blocking;
+  return data.blocking === 'enabled';
 };
 
 const setPiHoleBlocking = async (blocking: boolean): Promise<void> => {
